@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "docker-mcp": {
+      "command": "python",
+      "args": [
+        "D:/Docker-MCP/docker-mcp/server.py"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "docker-mcp": {
+      "command": "python",
+      "args": [
+        "/home/durapid-server/Code/backends/Docker_MCP/server.py"
+      ]
+    }
+  }
+}
