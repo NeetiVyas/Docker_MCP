@@ -144,13 +144,12 @@ class ConnectNetworkResponse(BaseToolResponse):
 class CreateDockerfileResponse(BaseToolResponse):
     tool: str = "create_dockerfile"
     message: str
-    path: str
-    language: str
-    framework: str
-    entry: str
-    workdir: str
-    port: Optional[int] = None
 
+
+class CreateDockerignoreResponse(BaseToolResponse):
+    tool:     str = "create_dockerignore"
+    message:  str
+    
 
 def tool_error(tool_name: str, message: str) -> str:
     return ErrorResponse(tool=tool_name, error=message).to_json()

@@ -87,6 +87,11 @@ async def list_tools() -> list[Tool]:
             name="remove_network",
             description="Remove a Docker network by name or ID.",
             inputSchema=RemoveNetworkInput.model_json_schema()
+        ),
+        Tool(
+            name="create_dockerignore",
+            description="build a dockerignore file to ignore the files not required for setting up project like .git, venv, .env",
+            inputSchema=CreateDockerIgnoreFileInput.model_json_schema()
         )
     ]
 

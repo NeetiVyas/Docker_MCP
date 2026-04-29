@@ -243,3 +243,9 @@ class CreateDockerfileInput(BaseModel):
     project_path: str = Field(description="Absolute path to your project folder")
     language: Optional[str] = Field(default=None, description="Force language: 'python', 'node', 'go'. Auto-detected if omitted.")
     output_path: Optional[str] = Field(default=None, description="Where to save the Dockerfile. Defaults to project_path.")
+
+
+class CreateDockerIgnoreFileInput(BaseModel):
+    project_path: str = Field(description="Absolute path to your project folder")
+    language: Optional[str] = Field(default=None, description="Force language: 'python', 'node', 'go'. Auto-detected if omitted.")
+    output_path: Optional[str] = Field(default=None, description="Where to save the Dockerfile. Defaults to project_path.")

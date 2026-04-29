@@ -29,9 +29,9 @@ def find_python_entrypoint(project_path: str) -> dict:
         with open(req_path) as f:
             req_content = f.read().lower()
 
-    is_fastapi  = "fastapi"  in req_content
-    is_uvicorn  = "uvicorn"  in req_content or is_fastapi
-    is_django   = "django"   in req_content
+    is_fastapi = "fastapi"  in req_content
+    is_uvicorn = "uvicorn"  in req_content or is_fastapi
+    is_django = "django"   in req_content
     is_gunicorn = "gunicorn" in req_content
 
     if "manage.py" in files or is_django:
@@ -61,7 +61,9 @@ def find_python_entrypoint(project_path: str) -> dict:
             }
         
     if "main.py" in files:
+        print("main.py found")
         if is_fastapi or is_uvicorn:
+            print("main.py is workdir")
             return {
                 "framework": "fastapi",
                 "cmd": '["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]',
@@ -301,15 +303,128 @@ def create_dockerfile(project_path: str, language: str = None, output_path: str 
         with open(dockerfile_path, "w") as f:
             f.write(content)
 
-        return success({
-            "message":   f"Dockerfile generated for {info['language']} ({info['framework']}) project.",
-            "path":      os.path.abspath(dockerfile_path),
-            "language":  info["language"],
-            "framework": info["framework"],
-            "entry":     info.get("entry", "unknown"),
-            "workdir":   info.get("workdir", "/app"),
-            "port":      info["port"],
-        })
+        return CreateDockerfileResponse(
+            message = f"Dockerfile created — check the path: {dockerfile_path}",
+        ).to_json()
 
     except OSError as e:
         return error(f"Could not write Dockerfile: {str(e)}")
+    
+
+_IGNORE_PYTHON = """
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+
+env/
+venv/
+.venv/
+ENV/
+ 
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+"""
+ 
+_IGNORE_NODE = """
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+.next/
+out/
+.cache/
+"""
+ 
+_IGNORE_GO = """
+# Go binaries & test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+"""
+ 
+_IGNORE_COMMON = """
+# Version control
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose*.yml
+ 
+# Environment & secrets
+.env
+.env.*
+*.env
+ 
+# OS clutter
+.DS_Store
+Thumbs.db
+ 
+# Logs & editor files
+*.log
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+ 
+README*
+LICENSE
+CHANGELOG*
+docs/
+tests/
+test/
+__tests__/
+coverage/
+.github/
+"""
+
+def create_dockerignore(project_path: str, language: str = None) -> str:
+    if not os.path.exists(project_path):
+        return error(f"Project path does not exist: '{project_path}'")
+ 
+    if not os.path.isdir(project_path):
+        return error(f"'{project_path}' is a file, not a directory.")
+
+    if language:
+        language = language.lower().strip()
+    else:
+        language = detect_language(project_path)
+ 
+    lang_block = {
+        "python": _IGNORE_PYTHON,
+        "node":   _IGNORE_NODE,
+        "go":     _IGNORE_GO,
+    }.get(language, "")
+ 
+    content = (lang_block + _IGNORE_COMMON).strip() + "\n"
+ 
+    try:
+        out_path = os.path.join(project_path, ".dockerignore")
+        with open(out_path, "w") as f:
+            f.write(content)
+ 
+        return CreateDockerignoreResponse(
+            message = f".dockerignore created — check the path: {out_path}",
+        ).to_json()
+ 
+    except OSError as e:
+        return error(f"Could not write .dockerignore: {str(e)}")

@@ -12,7 +12,7 @@ def get_docker_client():
 
 def _container_info(container) -> ContainerInfo:
     return ContainerInfo(
-        id=container.short_id,
+        id=container.id,
         name=container.name,
         image=container.image.tags[0] if container.image.tags else "unknown",
         status=container.status,
@@ -21,7 +21,7 @@ def _container_info(container) -> ContainerInfo:
 
 def _image_info(img) -> ImageInfo:
     return ImageInfo(
-        id=img.short_id,
+        id=img.id,
         tags=img.tags if img.tags else ["<untagged>"],
         size_mb=round(img.attrs.get("Size", 0) / 1024 / 1024, 2),
         created=img.attrs.get("Created", "")[:10],
@@ -34,7 +34,7 @@ def _resolve_container(client, identifier: str):
     except docker.errors.NotFound:
         matches = [
             c for c in client.containers.list(all=True)
-            if c.name == identifier or c.short_id.startswith(identifier)
+            if c.name == identifier or c.id.startswith(identifier)
         ]
         if len(matches) == 1:
             return matches[0]
@@ -59,19 +59,29 @@ def list_containers(show_all: bool = False) -> str:
         return error(f"Could not connect to Docker: {str(e)}")
     
 
-def run_container(image: str, name: str = None, detach: bool = DEFAULT_DETACH) -> str:
+def run_container(image: str, name: str = None, detach: bool = True) -> str:
     try:
-        client     = get_docker_client()
-        run_kwargs = {"image": image, "detach": detach}
+        client = get_docker_client()
+        run_kwargs = {
+            "image":  image,
+            "detach": True,  
+        }
         if name:
             run_kwargs["name"] = name
+
         container = client.containers.run(**run_kwargs)
+
+        import time
+        time.sleep(2)
+        container.reload()   
+
         return RunContainerResponse(
             message=f"Container started from image '{image}'",
             container=_container_info(container),
         ).to_json()
+
     except docker.errors.ImageNotFound:
-        return tool_error("run_container", f"Image '{image}' not found on Docker Hub.")
+        return tool_error("run_container", f"Image '{image}' not found locally. Pull it first.")
     except docker.errors.APIError as e:
         return tool_error("run_container", f"Docker API error: {str(e)}")
     
@@ -206,7 +216,7 @@ def build_image(path: str, tag: str) -> str:
         if not os.path.exists(os.path.join(path, "Dockerfile")):
             return tool_error("build_image", f"No Dockerfile found in '{path}'.")
  
-        client           = get_docker_client()
+        client = get_docker_client()
         image, log_stream = client.images.build(path=path, tag=tag, rm=True)
         log_lines        = [
             chunk.get("stream", "").strip()
@@ -215,10 +225,11 @@ def build_image(path: str, tag: str) -> str:
         ]
         return BuildImageResponse(
             message=f"Image '{tag}' built successfully.",
-            id=image.short_id,
+            id=image.id,
             tag=tag,
             build_logs=log_lines[-10:],
         ).to_json()
+    
     except docker.errors.BuildError as e:
         return tool_error("build_image", f"Build failed: {str(e)}")
     except docker.errors.APIError as e:
@@ -233,7 +244,7 @@ def list_networks() -> str:
             total=len(networks),
             networks=[
                 NetworkInfo(
-                    id=net.short_id,
+                    id=net.id,
                     name=net.name,
                     driver=net.attrs.get("Driver", "unknown"),
                     scope=net.attrs.get("Scope", "unknown"),
@@ -252,7 +263,7 @@ def create_network(name: str, driver: str = "bridge") -> str:
         return CreateNetworkResponse(
             message=f"Network '{name}' created successfully.",
             network=NetworkInfo(
-                id=network.short_id,
+                id=network.id,
                 name=name,
                 driver=driver,
                 scope="local",

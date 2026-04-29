@@ -11,7 +11,7 @@ def error(message: str):
 
 def format_container(container) -> dict:
     return {
-        "id":     container.short_id,          
+        "id":     container.id,          
         "name":   container.name,              
         "image":  container.image.tags[0] if container.image.tags else "unknown",
         "status": container.status,            
