@@ -3,7 +3,7 @@
     "docker-mcp": {
       "command": "python",
       "args": [
-        "D:/Docker-MCP/docker-mcp/server.py"
+        "D:/Docker-MCP/server.py"
       ]
     }
   }
