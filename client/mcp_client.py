@@ -236,6 +236,7 @@ BUILD IMAGE RULES — VERY IMPORTANT:
   "To build the image I need two things:
    1. The absolute path to your project folder (the one containing the Dockerfile)
    2. A tag for the image — I'll default to `<folder-name>:latest` if you leave it blank"
+- If the dockerfile does not exists, terminate tool call and say no dockerfile to build image.
 - For the tag, derive it from the last segment of the project_path the user provided.
   Examples: path=/home/user/my-api  → tag=my-api:latest
             path=C:\Projects\shop-service → tag=shop-service:latest

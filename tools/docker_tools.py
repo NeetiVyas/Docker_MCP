@@ -176,6 +176,8 @@ def pull_image(image: str) -> str:
 def remove_image(image: str, force: bool = False) -> str:
     try:
         client = get_docker_client()
+        # img_obj = client.images.get(image)  # <-- add this
+        # print(f"Resolved '{image}' → ID: {img_obj.id}, Tags: {img_obj.tags}")
         client.images.remove(image=image, force=force)
         return RemoveImageResponse(
             message=f"Image '{image}' removed successfully.",
@@ -233,6 +235,14 @@ def build_image(path: str, tag: str) -> str:
     except docker.errors.BuildError as e:
         return tool_error("build_image", f"Build failed: {str(e)}")
     except docker.errors.APIError as e:
+        msg = str(e)
+        if "input/output error" in msg or "blob" in msg and "expected at" in msg:
+            return tool_error(
+                "build_image",
+                "Docker storage is corrupted (input/output error on a blob). "
+                "Fix: run 'docker system prune -a --volumes' to clean the store, "
+                "then retry. If the error persists, reset Docker Desktop to factory defaults."
+            )
         return tool_error("build_image", f"Docker API error: {str(e)}")
     
 

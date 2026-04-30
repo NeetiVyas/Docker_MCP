@@ -194,7 +194,6 @@ with st.sidebar:
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         content = msg["content"]
-        # Re-render saved tool results as structured output
         if isinstance(content, list):
             for block in content:
                 if block.get("type") == "tool_result":
